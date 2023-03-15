@@ -3,6 +3,30 @@ use serde_json::json;
 use thiserror::Error;
 use uuid::Uuid;
 
+#[derive(Debug, Error)]
+pub enum NewUploadError {
+    #[error("database error")]
+    R2d2Error(#[from] diesel::r2d2::PoolError),
+    #[error("database error")]
+    DieselError(#[from] diesel::result::Error),
+}
+
+impl IntoResponse for NewUploadError {
+    fn into_response(self) -> axum::response::Response {
+        let status_code = match &self {
+            Self::R2d2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::DieselError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        #[cfg(debug_assertions)]
+        let error_message = format!("{:?}", self);
+        #[cfg(not(debug_assertions))]
+        let error_message = self.to_string();
+
+        (status_code, Json(json!({ "error": error_message }))).into_response()
+    }
+}
+
 pub enum GetUploadParamRejection {
     InvalidUuid,
 }

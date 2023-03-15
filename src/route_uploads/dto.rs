@@ -1,16 +1,14 @@
 use super::error::GetUploadParamRejection;
-use axum::{
-    async_trait,
-    extract::FromRequestParts,
-    http::{request::Parts, StatusCode},
-    response::IntoResponse,
-    Json,
-};
+use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
+
+#[derive(Serialize, ToSchema)]
+pub struct NewUploadResponse {
+    pub uuid: Uuid,
+}
 
 #[derive(Deserialize, IntoParams)]
 pub struct GetUploadParam {
@@ -39,20 +37,4 @@ pub struct GetUploadResponse {
     pub file_name: Option<String>,
     pub uploaded_size: i64,
     pub uploaded_at: NaiveDateTime,
-}
-
-pub struct NewUploadResponse {
-    pub uuid: Uuid,
-}
-
-impl IntoResponse for NewUploadResponse {
-    fn into_response(self) -> axum::response::Response {
-        (
-            StatusCode::CREATED,
-            Json(json!({
-                "uuid": self.uuid.to_string(),
-            })),
-        )
-            .into_response()
-    }
 }
