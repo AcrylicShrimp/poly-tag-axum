@@ -5,12 +5,14 @@ use self::{dto::*, error::*};
 use crate::{
     app_state::AppState,
     db::{model::*, DbPool},
+    file_driver::FileDriver,
 };
 use axum::{
-    extract::State,
+    extract::{DefaultBodyLimit, Multipart, State},
+    headers::ContentRange,
     http::StatusCode,
-    routing::{get, post},
-    Json, Router,
+    routing::{get, post, put},
+    Json, Router, TypedHeader,
 };
 use diesel::{insert_into, prelude::*};
 use uuid::Uuid;
@@ -19,6 +21,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", post(new_upload))
         .route("/:uuid", get(get_upload))
+        .route("/:uuid", put(put_upload).layer(DefaultBodyLimit::disable()))
 }
 
 #[utoipa::path(
@@ -63,12 +66,14 @@ async fn new_upload(
 )]
 async fn get_upload(
     State(db_pool): State<DbPool>,
+    State(file_driver): State<FileDriver>,
     param: GetUploadParam,
 ) -> Result<(StatusCode, Json<GetUploadResponse>), GetUploadError> {
     use crate::db::schema::uploads::dsl::*;
 
     let db_connection = &mut db_pool.get()?;
     let upload = uploads
+        .select((uuid, created_at))
         .filter(uuid.eq(param.uuid))
         .first::<Upload>(db_connection)
         .optional()?;
@@ -82,9 +87,68 @@ async fn get_upload(
         StatusCode::OK,
         Json(GetUploadResponse {
             uuid: upload.uuid,
-            file_name: upload.file_name,
-            uploaded_size: upload.uploaded_size,
-            uploaded_at: upload.uploaded_at,
+            uploaded_size: file_driver
+                .read_file_size(upload.uuid)
+                .await?
+                .unwrap_or_default(),
+            created_at: upload.created_at,
+        }),
+    ))
+}
+
+async fn put_upload(
+    State(db_pool): State<DbPool>,
+    State(file_driver): State<FileDriver>,
+    content_range: Option<TypedHeader<ContentRange>>,
+    param: PutUploadParam,
+    mut body: Multipart,
+) -> Result<(StatusCode, Json<PutUploadResponse>), PutUploadError> {
+    use crate::db::schema::uploads::dsl::*;
+
+    let db_connection = &mut db_pool.get()?;
+    let upload = uploads
+        .select((uuid, created_at))
+        .filter(uuid.eq(param.uuid))
+        .first::<Upload>(db_connection)
+        .optional()?;
+    let upload = if let Some(upload) = upload {
+        upload
+    } else {
+        return Err(PutUploadError::NotFound { uuid: param.uuid });
+    };
+
+    let offset = content_range
+        .and_then(|content_range| content_range.bytes_range())
+        .map(|range| range.0);
+
+    let mut field_found = false;
+    let mut file_name = None;
+    let mut file_size = None;
+
+    while let Some(field) = body.next_field().await? {
+        if field_found {
+            return Err(PutUploadError::MultipleFieldFound);
+        }
+
+        field_found = true;
+        file_name = if let Some(upload_file_name) = field.file_name() {
+            Some(upload_file_name.to_owned())
+        } else {
+            return Err(PutUploadError::InvalidFileName);
+        };
+        file_size = Some(file_driver.write_file(param.uuid, offset, field).await?);
+    }
+
+    if !field_found {
+        return Err(PutUploadError::NoFieldFound);
+    }
+
+    Ok((
+        StatusCode::OK,
+        Json(PutUploadResponse {
+            uuid: upload.uuid,
+            file_name: file_name.unwrap(),
+            uploaded_size: file_size.unwrap(),
         }),
     ))
 }

@@ -3,8 +3,6 @@
 diesel::table! {
     uploads (uuid) {
         uuid -> Uuid,
-        file_name -> Nullable<Varchar>,
-        uploaded_size -> Int8,
-        uploaded_at -> Timestamp,
+        created_at -> Timestamp,
     }
 }

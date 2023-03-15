@@ -2,10 +2,11 @@ mod app_state;
 mod db;
 mod docs;
 mod errors;
+mod file_driver;
 mod route_files;
 mod route_uploads;
 
-use crate::docs::ApiDoc;
+use crate::{docs::ApiDoc, file_driver::FileDriver};
 use app_state::AppState;
 use axum::{http::StatusCode, response::IntoResponse, Router, Server};
 use std::net::SocketAddr;
@@ -25,11 +26,14 @@ async fn main() {
     let db_pool = db::init_pool();
     db::run_migrations(&db_pool);
 
-    let app_state = AppState::new(db_pool);
+    let mut file_driver = FileDriver::new("./files"); // TODO: make this configurable
+    file_driver.create_root_dir().await;
+
+    let app_state = AppState::new(db_pool, file_driver);
     let app = Router::new();
 
-    let port = 3000;
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let port = 3000; // TODO: make this configurable
+    let addr = SocketAddr::from(([127, 0, 0, 1], port)); // TODO: make this configurable
     #[cfg(debug_assertions)]
     let app = {
         tracing::info!(
