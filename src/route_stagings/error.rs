@@ -1,18 +1,18 @@
-use crate::file_driver::{ReadFileSizeError, WriteFileError};
+use crate::file_driver::{ReadStagingSizeError, WriteStagingError};
 use axum::{extract::multipart::MultipartError, http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 use thiserror::Error;
 use uuid::Uuid;
 
 #[derive(Debug, Error)]
-pub enum NewUploadError {
+pub enum NewStagingError {
     #[error("database error")]
     R2d2Error(#[from] diesel::r2d2::PoolError),
     #[error("database error")]
     DieselError(#[from] diesel::result::Error),
 }
 
-impl IntoResponse for NewUploadError {
+impl IntoResponse for NewStagingError {
     fn into_response(self) -> axum::response::Response {
         let status_code = match &self {
             Self::R2d2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -29,18 +29,18 @@ impl IntoResponse for NewUploadError {
 }
 
 #[derive(Debug, Error)]
-pub enum GetUploadError {
+pub enum GetStagingError {
     #[error("database error")]
     R2d2Error(#[from] diesel::r2d2::PoolError),
     #[error("database error")]
     DieselError(#[from] diesel::result::Error),
-    #[error("no upload was found with uuid `{uuid}`")]
+    #[error("staging was not found with uuid `{uuid}`")]
     NotFound { uuid: Uuid },
     #[error("internal error")]
-    FileDriverError(#[from] ReadFileSizeError),
+    FileDriverError(#[from] ReadStagingSizeError),
 }
 
-impl IntoResponse for GetUploadError {
+impl IntoResponse for GetStagingError {
     fn into_response(self) -> axum::response::Response {
         let status_code = match &self {
             Self::R2d2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -59,12 +59,12 @@ impl IntoResponse for GetUploadError {
 }
 
 #[derive(Debug, Error)]
-pub enum PutUploadError {
+pub enum PutStagingError {
     #[error("database error")]
     R2d2Error(#[from] diesel::r2d2::PoolError),
     #[error("database error")]
     DieselError(#[from] diesel::result::Error),
-    #[error("no upload was found with uuid `{uuid}`")]
+    #[error("staging was not found with uuid `{uuid}`")]
     NotFound { uuid: Uuid },
     #[error("invalid multipart request")]
     MultipartError(#[from] MultipartError),
@@ -72,13 +72,13 @@ pub enum PutUploadError {
     MultipleFieldFound,
     #[error("invalid filename; it must be a valid filename")]
     InvalidFileName,
-    #[error("no field was found; a field is required")]
+    #[error("field was no found; a field is required")]
     NoFieldFound,
     #[error("internal error")]
-    FileDriverError(#[from] WriteFileError<MultipartError>),
+    FileDriverError(#[from] WriteStagingError<MultipartError>),
 }
 
-impl IntoResponse for PutUploadError {
+impl IntoResponse for PutStagingError {
     fn into_response(self) -> axum::response::Response {
         let status_code = match &self {
             Self::R2d2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -89,9 +89,9 @@ impl IntoResponse for PutUploadError {
             Self::InvalidFileName => StatusCode::BAD_REQUEST,
             Self::NoFieldFound => StatusCode::BAD_REQUEST,
             Self::FileDriverError(err) => match err {
-                WriteFileError::CreateFile(..) => StatusCode::INTERNAL_SERVER_ERROR,
-                WriteFileError::ReadFileMetadata(..) => StatusCode::INTERNAL_SERVER_ERROR,
-                WriteFileError::InvalidOffset { offset, file_size } => {
+                WriteStagingError::CreateFile(..) => StatusCode::INTERNAL_SERVER_ERROR,
+                WriteStagingError::ReadFileMetadata(..) => StatusCode::INTERNAL_SERVER_ERROR,
+                WriteStagingError::InvalidOffset { offset, file_size } => {
                     return (
                         StatusCode::UNPROCESSABLE_ENTITY,
                         Json(json!({
@@ -100,8 +100,8 @@ impl IntoResponse for PutUploadError {
                     )
                         .into_response();
                 }
-                WriteFileError::ReadFromStream(..) => StatusCode::INTERNAL_SERVER_ERROR,
-                WriteFileError::WriteToFile(..) => StatusCode::INTERNAL_SERVER_ERROR,
+                WriteStagingError::ReadFromStream(..) => StatusCode::INTERNAL_SERVER_ERROR,
+                WriteStagingError::WriteToFile(..) => StatusCode::INTERNAL_SERVER_ERROR,
             },
         };
 

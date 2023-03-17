@@ -12,21 +12,21 @@ use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
 #[derive(Serialize, ToSchema)]
-pub struct NewUploadResponse {
+pub struct NewStagingResponse {
     pub uuid: Uuid,
 }
 
 #[derive(Deserialize, IntoParams)]
-pub struct GetUploadParam {
+pub struct GetStagingParam {
     pub uuid: Uuid,
 }
 
 #[async_trait]
-impl<S> FromRequestParts<S> for GetUploadParam
+impl<S> FromRequestParts<S> for GetStagingParam
 where
     S: Send + Sync,
 {
-    type Rejection = GetUploadParamRejection;
+    type Rejection = GetStagingParamRejection;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let uuid = axum::extract::Path::<String>::from_request_parts(parts, state)
@@ -37,11 +37,11 @@ where
     }
 }
 
-pub enum GetUploadParamRejection {
+pub enum GetStagingParamRejection {
     InvalidUuid,
 }
 
-impl IntoResponse for GetUploadParamRejection {
+impl IntoResponse for GetStagingParamRejection {
     fn into_response(self) -> Response {
         (
             StatusCode::BAD_REQUEST,
@@ -52,23 +52,23 @@ impl IntoResponse for GetUploadParamRejection {
 }
 
 #[derive(Serialize, ToSchema)]
-pub struct GetUploadResponse {
+pub struct GetStagingResponse {
     pub uuid: Uuid,
-    pub uploaded_size: u64,
-    pub created_at: NaiveDateTime,
+    pub staged_size: u64,
+    pub staged_at: NaiveDateTime,
 }
 
 #[derive(Deserialize, IntoParams)]
-pub struct PutUploadParam {
+pub struct PutStagingParam {
     pub uuid: Uuid,
 }
 
 #[async_trait]
-impl<S> FromRequestParts<S> for PutUploadParam
+impl<S> FromRequestParts<S> for PutStagingParam
 where
     S: Send + Sync,
 {
-    type Rejection = PutUploadParamRejection;
+    type Rejection = PutStagingParamRejection;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let uuid = axum::extract::Path::<String>::from_request_parts(parts, state)
@@ -79,11 +79,11 @@ where
     }
 }
 
-pub enum PutUploadParamRejection {
+pub enum PutStagingParamRejection {
     InvalidUuid,
 }
 
-impl IntoResponse for PutUploadParamRejection {
+impl IntoResponse for PutStagingParamRejection {
     fn into_response(self) -> Response {
         (
             StatusCode::BAD_REQUEST,
@@ -94,8 +94,8 @@ impl IntoResponse for PutUploadParamRejection {
 }
 
 #[derive(Serialize, ToSchema)]
-pub struct PutUploadResponse {
+pub struct PutStagingResponse {
     pub uuid: Uuid,
     pub file_name: String,
-    pub uploaded_size: u64,
+    pub staged_size: u64,
 }

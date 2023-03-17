@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use uuid::Uuid;
 
 #[derive(Queryable)]
-pub struct Upload {
+pub struct Staging {
     pub uuid: Uuid,
-    pub created_at: NaiveDateTime,
+    pub staged_at: NaiveDateTime,
 }

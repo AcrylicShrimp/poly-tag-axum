@@ -3,8 +3,7 @@ mod db;
 mod docs;
 mod errors;
 mod file_driver;
-mod route_files;
-mod route_uploads;
+mod route_stagings;
 
 use crate::{docs::ApiDoc, file_driver::FileDriver};
 use app_state::AppState;
@@ -27,7 +26,7 @@ async fn main() {
     db::run_migrations(&db_pool);
 
     let mut file_driver = FileDriver::new("./files"); // TODO: make this configurable
-    file_driver.create_root_dir().await;
+    file_driver.create_dirs().await;
 
     let app_state = AppState::new(db_pool, file_driver);
     let app = Router::new();
@@ -44,8 +43,7 @@ async fn main() {
     };
 
     let app = app
-        .nest("/files", route_files::router())
-        .nest("/uploads", route_uploads::router())
+        .nest("/stagings", route_stagings::router())
         .fallback(handler_fallback)
         .with_state(app_state);
 
