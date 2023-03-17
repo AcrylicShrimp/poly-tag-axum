@@ -226,14 +226,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "crc32fast"
-version = "1.3.2"
-source = "git+https://github.com/AcrylicShrimp/rust-crc32fast-1.61.0.git?branch=1.61.0#0251222cd22c17d3084f94d6d34aecd8702aa054"
-dependencies = [
- "cfg-if",
-]
-
-[[package]]
 name = "crossbeam-utils"
 version = "0.8.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -420,7 +412,7 @@ version = "1.0.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a8a2db397cb1c8772f31494cb8917e48cd1e64f0fa7efac59fbd741a0a8ce841"
 dependencies = [
- "crc32fast 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "crc32fast",
  "miniz_oxide",
 ]
 
@@ -1023,7 +1015,7 @@ dependencies = [
  "axum",
  "axum-extra",
  "chrono",
- "crc32fast 1.3.2 (git+https://github.com/AcrylicShrimp/rust-crc32fast-1.61.0.git?branch=1.61.0)",
+ "crc32fast",
  "diesel",
  "diesel-async",
  "diesel_migrations",
@@ -2037,7 +2029,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0445d0fbc924bb93539b4316c11afb121ea39296f99a3c4c9edad09e3658cdef"
 dependencies = [
  "byteorder",
- "crc32fast 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "crc32fast",
  "crossbeam-utils",
  "flate2",
 ]
