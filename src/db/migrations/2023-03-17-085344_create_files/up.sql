@@ -1,10 +1,10 @@
 -- Your SQL goes here
 CREATE TABLE files (
   uuid UUID PRIMARY KEY,
-  file_name TEXT NOT NULL,
-  file_type TEXT NOT NULL,
-  file_hash CHARACTER(80) NOT NULL,
-  file_size BIGINT NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  hash CHARACTER(80) NOT NULL,
+  size BIGINT NOT NULL,
+  uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
-CREATE INDEX ON files(created_at ASC);
+CREATE INDEX ON files(uploaded_at ASC);
