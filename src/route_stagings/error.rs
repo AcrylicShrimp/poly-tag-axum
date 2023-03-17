@@ -1,13 +1,14 @@
-use crate::file_driver::{ReadStagingSizeError, WriteStagingError};
+use crate::file_driver::{ReadStagingInfoError, ReadStagingSizeError, WriteStagingError};
 use axum::{extract::multipart::MultipartError, http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 use thiserror::Error;
 use uuid::Uuid;
 
+// TODO: Merge these errors into one error type.
 #[derive(Debug, Error)]
 pub enum NewStagingError {
     #[error("database error")]
-    R2d2Error(#[from] diesel::r2d2::PoolError),
+    PoolError(#[from] diesel_async::pooled_connection::deadpool::PoolError),
     #[error("database error")]
     DieselError(#[from] diesel::result::Error),
 }
@@ -15,7 +16,7 @@ pub enum NewStagingError {
 impl IntoResponse for NewStagingError {
     fn into_response(self) -> axum::response::Response {
         let status_code = match &self {
-            Self::R2d2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::PoolError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::DieselError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
@@ -31,7 +32,7 @@ impl IntoResponse for NewStagingError {
 #[derive(Debug, Error)]
 pub enum GetStagingError {
     #[error("database error")]
-    R2d2Error(#[from] diesel::r2d2::PoolError),
+    PoolError(#[from] diesel_async::pooled_connection::deadpool::PoolError),
     #[error("database error")]
     DieselError(#[from] diesel::result::Error),
     #[error("staging was not found with uuid `{uuid}`")]
@@ -43,7 +44,7 @@ pub enum GetStagingError {
 impl IntoResponse for GetStagingError {
     fn into_response(self) -> axum::response::Response {
         let status_code = match &self {
-            Self::R2d2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::PoolError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::DieselError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::NotFound { .. } => StatusCode::NOT_FOUND,
             Self::FileDriverError(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -61,7 +62,7 @@ impl IntoResponse for GetStagingError {
 #[derive(Debug, Error)]
 pub enum PutStagingError {
     #[error("database error")]
-    R2d2Error(#[from] diesel::r2d2::PoolError),
+    PoolError(#[from] diesel_async::pooled_connection::deadpool::PoolError),
     #[error("database error")]
     DieselError(#[from] diesel::result::Error),
     #[error("staging was not found with uuid `{uuid}`")]
@@ -76,12 +77,14 @@ pub enum PutStagingError {
     NoFieldFound,
     #[error("internal error")]
     FileDriverError(#[from] WriteStagingError<MultipartError>),
+    #[error("internal error")]
+    ReadStagingInfoError(#[from] ReadStagingInfoError),
 }
 
 impl IntoResponse for PutStagingError {
     fn into_response(self) -> axum::response::Response {
         let status_code = match &self {
-            Self::R2d2Error(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::PoolError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::DieselError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::NotFound { .. } => StatusCode::NOT_FOUND,
             Self::MultipartError(_) => StatusCode::BAD_REQUEST, // TODO: is this the right status code?
@@ -103,6 +106,7 @@ impl IntoResponse for PutStagingError {
                 WriteStagingError::ReadFromStream(..) => StatusCode::INTERNAL_SERVER_ERROR,
                 WriteStagingError::WriteToFile(..) => StatusCode::INTERNAL_SERVER_ERROR,
             },
+            Self::ReadStagingInfoError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
 
         #[cfg(debug_assertions)]

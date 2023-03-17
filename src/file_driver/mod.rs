@@ -1,4 +1,9 @@
+mod compute_file_hash;
+mod compute_file_mime;
+
 use axum::body::Bytes;
+use compute_file_hash::*;
+use compute_file_mime::*;
 use futures::{Stream, TryStreamExt};
 use std::{
     io::SeekFrom,
@@ -26,18 +31,17 @@ impl FileDriver {
     }
 
     pub async fn create_dirs(&mut self) {
-        self.stagings_path = tokio::fs::canonicalize(&self.stagings_path)
-            .await
-            .expect(&format!(
-                "failed to canonicalize path for stagings: `{}`",
-                self.stagings_path.display()
-            ));
-        self.files_path = tokio::fs::canonicalize(&self.files_path)
-            .await
-            .expect(&format!(
-                "failed to canonicalize path for files: `{}`",
-                self.files_path.display()
-            ));
+        let current_dir = std::env::current_dir().expect("failed to get current directory");
+        self.stagings_path = {
+            let mut path = current_dir.clone();
+            path.push(&self.stagings_path);
+            path
+        };
+        self.files_path = {
+            let mut path = current_dir;
+            path.push(&self.files_path);
+            path
+        };
 
         tracing::info!(
             "creating stagings directory at `{}`",
@@ -122,6 +126,59 @@ impl FileDriver {
             .map_err(WriteStagingError::ReadFileMetadata)?;
         Ok(metadata.len())
     }
+
+    pub async fn read_staging_info(&self, uuid: Uuid) -> Result<StagingInfo, ReadStagingInfoError> {
+        let path = self.stagings_path.join(uuid.to_string());
+        let hash = compute_file_hash(&path);
+        let mime = compute_file_mime(&path);
+        let hash = hash.await?;
+        let mime = mime.await?;
+        Ok(StagingInfo { hash, mime })
+    }
+
+    // pub async fn commit_staging_into_file(
+    //     &self,
+    //     staging_uuid: Uuid,
+    //     staging_name: String,
+    //     file_uuid: Uuid,
+    // ) -> Result<FileInfo, CommitStagingIntoFileError> {
+    //     let staging_path = self.stagings_path.join(staging_uuid.to_string());
+    //     let staging_metadata = tokio::fs::metadata(&staging_path)
+    //         .await
+    //         .map_err(CommitStagingIntoFileError::ReadStagingFileMetadata)?;
+    //     let staging_size = staging_metadata.len();
+
+    //     let staging_file = tokio::fs::File::open(&staging_path)
+    //         .await
+    //         .map_err(CommitStagingIntoFileError::ReadStagingFile)?;
+
+    //     let file_path = self.files_path.join(file_uuid.to_string());
+    //     let file = tokio::fs::File::create(&file_path)
+    //         .await
+    //         .map_err(CommitStagingIntoFileError::CreateFile)?;
+
+    //     let mut reader = tokio::io::BufReader::new(staging_file);
+    //     let mut writer = tokio::io::BufWriter::new(file);
+
+    //     tokio::io::copy(&mut reader, &mut writer)
+    //         .await
+    //         .map_err(CommitStagingIntoFileError::WriteToFile)?;
+
+    //     let hash = {
+    //         let mut hasher = md5::Md5::new();
+    //         let mut reader = tokio::io::BufReader::new(staging_file);
+    //         hasher.update(&mut reader);
+    //         format!("{:x}", hasher.finalize())
+    //     };
+
+    //     Ok(FileInfo {
+    //         uuid: file_uuid,
+    //         name: staging_name,
+    //         mime_type: "application/octet-stream".to_string(),
+    //         hash,
+    //         size: staging_size,
+    //     })
+    // }
 }
 
 #[derive(Debug, Error)]
@@ -143,3 +200,21 @@ pub enum WriteStagingError<E> {
     #[error("failed to write to file")]
     WriteToFile(tokio::io::Error),
 }
+
+pub struct StagingInfo {
+    pub mime: &'static str,
+    pub hash: u32,
+}
+
+#[derive(Debug, Error)]
+pub enum ReadStagingInfoError {
+    #[error("failed to read staging file metadata")]
+    ReadFileMetadata(std::io::Error),
+    #[error("failed to compute file hash")]
+    ComputeFileHashError(#[from] ComputeFileHashError),
+    #[error("failed to compute file mime")]
+    ComputeFileMimeError(#[from] ComputeFileMimeError),
+}
+
+#[derive(Debug, Error)]
+pub enum CommitStagingIntoFileError {}

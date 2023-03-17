@@ -22,8 +22,8 @@ async fn main() {
         env!("CARGO_PKG_VERSION")
     );
 
+    db::run_migrations();
     let db_pool = db::init_pool();
-    db::run_migrations(&db_pool);
 
     let mut file_driver = FileDriver::new("./files"); // TODO: make this configurable
     file_driver.create_dirs().await;

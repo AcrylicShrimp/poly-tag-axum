@@ -14,7 +14,10 @@ use axum::{
     routing::{get, post, put},
     Json, Router, TypedHeader,
 };
-use diesel::{insert_into, prelude::*};
+use chrono::Utc;
+use diesel::prelude::*;
+use diesel_async::{scoped_futures::ScopedFutureExt, AsyncConnection, RunQueryDsl};
+use smartstring::alias::String;
 use uuid::Uuid;
 
 pub fn router() -> Router<AppState> {
@@ -41,16 +44,24 @@ async fn new_staging(
 ) -> Result<(StatusCode, Json<NewStagingResponse>), NewStagingError> {
     use crate::db::schema::stagings::dsl::*;
 
-    let db_connection = &mut db_pool.get()?;
-    let staging_uuid = Uuid::new_v4();
-    insert_into(stagings)
-        .values(uuid.eq(staging_uuid))
-        .execute(db_connection)?;
+    let db_connection = &mut db_pool.get().await?;
+    db_connection
+        .transaction::<_, NewStagingError, _>(|db_connection| {
+            async move {
+                let staging_uuid = Uuid::new_v4();
+                diesel::insert_into(stagings)
+                    .values(uuid.eq(staging_uuid))
+                    .execute(db_connection)
+                    .await?;
 
-    Ok((
-        StatusCode::CREATED,
-        Json(NewStagingResponse { uuid: staging_uuid }),
-    ))
+                Ok((
+                    StatusCode::CREATED,
+                    Json(NewStagingResponse { uuid: staging_uuid }),
+                ))
+            }
+            .scope_boxed()
+        })
+        .await
 }
 
 #[utoipa::path(
@@ -74,11 +85,12 @@ async fn get_staging(
 ) -> Result<(StatusCode, Json<GetStagingResponse>), GetStagingError> {
     use crate::db::schema::stagings::dsl::*;
 
-    let db_connection = &mut db_pool.get()?;
+    let db_connection = &mut db_pool.get().await?;
     let staging = stagings
         .select((uuid, staged_at))
         .filter(uuid.eq(param.uuid))
         .first::<Staging>(db_connection)
+        .await
         .optional()?;
     let staging = if let Some(staging) = staging {
         staging
@@ -106,52 +118,82 @@ async fn put_staging(
     param: PutStagingParam,
     mut body: Multipart,
 ) -> Result<(StatusCode, Json<PutStagingResponse>), PutStagingError> {
-    use crate::db::schema::stagings::dsl::*;
+    use crate::db::schema::files::dsl as files;
+    use crate::db::schema::stagings::dsl as stagings;
 
-    let db_connection = &mut db_pool.get()?;
-    let staging = stagings
-        .select((uuid, staged_at))
-        .filter(uuid.eq(param.uuid))
-        .first::<Staging>(db_connection)
-        .optional()?;
-    let staging = if let Some(staging) = staging {
-        staging
-    } else {
-        return Err(PutStagingError::NotFound { uuid: param.uuid });
-    };
+    let db_connection = &mut db_pool.get().await?;
+    db_connection
+        .transaction(|db_connection| {
+            async move {
+                let staging = stagings::stagings
+                    .for_update()
+                    .select((stagings::uuid, stagings::staged_at))
+                    .filter(stagings::uuid.eq(param.uuid))
+                    .first::<Staging>(db_connection)
+                    .await
+                    .optional()?;
 
-    let offset = content_range
-        .and_then(|content_range| content_range.bytes_range())
-        .map(|range| range.0);
+                if staging.is_none() {
+                    return Err(PutStagingError::NotFound { uuid: param.uuid });
+                }
 
-    let mut field_found = false;
-    let mut file_name = None;
-    let mut file_size = None;
+                let offset = content_range
+                    .and_then(|content_range| content_range.bytes_range())
+                    .map(|range| range.0);
 
-    while let Some(field) = body.next_field().await? {
-        if field_found {
-            return Err(PutStagingError::MultipleFieldFound);
-        }
+                let mut field_found = false;
+                let mut file_name = None;
+                let mut file_size = None;
 
-        field_found = true;
-        file_name = if let Some(staging_file_name) = field.file_name() {
-            Some(staging_file_name.to_owned())
-        } else {
-            return Err(PutStagingError::InvalidFileName);
-        };
-        file_size = Some(file_driver.write_staging(param.uuid, offset, field).await?);
-    }
+                while let Some(field) = body.next_field().await? {
+                    if field_found {
+                        return Err(PutStagingError::MultipleFieldFound);
+                    }
 
-    if !field_found {
-        return Err(PutStagingError::NoFieldFound);
-    }
+                    field_found = true;
+                    file_name = if let Some(file_name) = field.file_name() {
+                        Some(String::from(file_name))
+                    } else {
+                        return Err(PutStagingError::InvalidFileName);
+                    };
+                    file_size = Some(file_driver.write_staging(param.uuid, offset, field).await?);
+                }
 
-    Ok((
-        StatusCode::OK,
-        Json(PutStagingResponse {
-            uuid: staging.uuid,
-            file_name: file_name.unwrap(),
-            staged_size: file_size.unwrap(),
-        }),
-    ))
+                if !field_found {
+                    return Err(PutStagingError::NoFieldFound);
+                }
+
+                let uuid = Uuid::new_v4();
+                let file_name = file_name.unwrap();
+                let file_size = file_size.unwrap();
+                let info = file_driver.read_staging_info(param.uuid).await?;
+                let now = Utc::now().naive_utc();
+
+                diesel::insert_into(files::files)
+                    .values((
+                        files::uuid.eq(uuid),
+                        files::name.eq(file_name.as_str()),
+                        files::mime.eq(&info.mime),
+                        files::size.eq(file_size as i64),
+                        files::hash.eq(info.hash as i64),
+                        files::uploaded_at.eq(now),
+                    ))
+                    .execute(db_connection)
+                    .await?;
+
+                Ok((
+                    StatusCode::OK,
+                    Json(PutStagingResponse {
+                        uuid,
+                        name: file_name.into(),
+                        mime: info.mime,
+                        size: file_size,
+                        hash: info.hash,
+                        uploaded_at: now,
+                    }),
+                ))
+            }
+            .scope_boxed()
+        })
+        .await
 }

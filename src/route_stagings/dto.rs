@@ -8,6 +8,7 @@ use axum::{
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use smartstring::alias::String;
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
@@ -96,6 +97,9 @@ impl IntoResponse for PutStagingParamRejection {
 #[derive(Serialize, ToSchema)]
 pub struct PutStagingResponse {
     pub uuid: Uuid,
-    pub file_name: String,
-    pub staged_size: u64,
+    pub name: String,
+    pub mime: &'static str,
+    pub size: u64,
+    pub hash: u32,
+    pub uploaded_at: NaiveDateTime,
 }

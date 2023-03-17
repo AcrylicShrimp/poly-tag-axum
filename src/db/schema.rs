@@ -4,10 +4,9 @@ diesel::table! {
     files (uuid) {
         uuid -> Uuid,
         name -> Text,
-        #[sql_name = "type"]
-        type_ -> Text,
-        hash -> Bpchar,
+        mime -> Text,
         size -> Int8,
+        hash -> Int8,
         uploaded_at -> Timestamp,
     }
 }
