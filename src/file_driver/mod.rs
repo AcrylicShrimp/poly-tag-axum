@@ -136,6 +136,19 @@ impl FileDriver {
         Ok(StagingInfo { hash, mime })
     }
 
+    pub async fn commit_staging_into_file(
+        &self,
+        staging_uuid: Uuid,
+        file_uuid: Uuid,
+    ) -> Result<(), CommitStagingIntoFileError> {
+        // NOTE: Rename won't work between different filesystems. Document this.
+        Ok(tokio::fs::rename(
+            self.stagings_path.join(staging_uuid.to_string()),
+            self.files_path.join(file_uuid.to_string()),
+        )
+        .await?)
+    }
+
     // pub async fn commit_staging_into_file(
     //     &self,
     //     staging_uuid: Uuid,
@@ -217,4 +230,7 @@ pub enum ReadStagingInfoError {
 }
 
 #[derive(Debug, Error)]
-pub enum CommitStagingIntoFileError {}
+pub enum CommitStagingIntoFileError {
+    #[error("io error: {0}")]
+    IOError(#[from] tokio::io::Error),
+}

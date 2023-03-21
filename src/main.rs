@@ -13,6 +13,8 @@ use tokio::signal;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+// TODO: Don't panic on errors, return a Result instead.
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt::init();
@@ -43,7 +45,8 @@ async fn main() {
     };
 
     let app = app
-        .nest("/stagings", route_stagings::router())
+        .merge(route_stagings::router())
+        // .nest("/stagings", route_stagings::router())
         .fallback(handler_fallback)
         .with_state(app_state);
 

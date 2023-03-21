@@ -22,11 +22,12 @@ use uuid::Uuid;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/", post(new_staging))
-        .route("/:uuid", get(get_staging))
+        .route("/stagings", post(new_staging))
+        .route("/stagings/:uuid", get(get_staging))
         .route(
-            "/:uuid",
-            put(put_staging).layer(DefaultBodyLimit::disable()),
+            "/stagings/:uuid",
+            // put(put_staging).layer(DefaultBodyLimit::disable()),
+            put(put_staging),
         )
 }
 
@@ -180,6 +181,9 @@ async fn put_staging(
                     ))
                     .execute(db_connection)
                     .await?;
+
+                // TODO: Transfer file from staging to storage.
+                // TODO: Delete staging database record.
 
                 Ok((
                     StatusCode::OK,

@@ -6,6 +6,8 @@ use std::{
 use thiserror::Error;
 use tokio::io::{AsyncWrite, Error as IOError};
 
+const BUFFER_SIZE: usize = 4 * 1024 * 1024;
+
 #[derive(Debug, Error)]
 pub enum ComputeFileHashError {
     #[error("failed to open file: {0}")]
@@ -18,8 +20,9 @@ pub async fn compute_file_hash(path: impl AsRef<Path>) -> Result<u32, ComputeFil
     let mut file = tokio::fs::File::open(path)
         .await
         .map_err(ComputeFileHashError::OpenFileError)?;
+    let mut reader = tokio::io::BufReader::with_capacity(BUFFER_SIZE, &mut file);
     let mut hasher = AsyncCrc32Hasher::new();
-    tokio::io::copy(&mut file, &mut hasher)
+    tokio::io::copy(&mut reader, &mut hasher)
         .await
         .map_err(ComputeFileHashError::ReadFileError)?;
     Ok(hasher.into_inner().finalize())

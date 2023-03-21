@@ -20,7 +20,7 @@ pub enum FileRouterError {
 impl IntoResponse for FileRouterError {
     fn into_response(self) -> Response {
         #[cfg(debug_assertions)]
-        let body = Json(json!({ "error": format!("{:?}", self) }));
+        let body = Json(json!({ "error": format!("{:#?}", self) }));
         #[cfg(not(debug_assertions))]
         let body = Json(json!({
             "error": self.to_string()
@@ -37,29 +37,29 @@ impl IntoResponse for FileRouterError {
     }
 }
 
-// fn status_code_from_multer_error(err: axam::multer::Error) -> StatusCode {
+// fn status_code_from_multer_error(err: axum::multer::Error) -> StatusCode {
 //     match err {
-//         axam::multer::Error::UnknownField { .. } => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::IncompleteFieldData { .. } => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::IncompleteHeaders => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::ReadHeaderFailed(..) => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::DecodeHeaderName { .. } => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::DecodeHeaderValue { .. } => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::IncompleteStream => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::FieldSizeExceeded { .. } => StatusCode::PAYLOAD_TOO_LARGE,
-//         axam::multer::Error::StreamSizeExceeded { .. } => StatusCode::PAYLOAD_TOO_LARGE,
-//         axam::multer::Error::StreamReadFailed(err) => {
-//             match err.downcast_ref::<axam::multer::Error>() {
+//         axum::multer::Error::UnknownField { .. } => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::IncompleteFieldData { .. } => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::IncompleteHeaders => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::ReadHeaderFailed(..) => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::DecodeHeaderName { .. } => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::DecodeHeaderValue { .. } => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::IncompleteStream => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::FieldSizeExceeded { .. } => StatusCode::PAYLOAD_TOO_LARGE,
+//         axum::multer::Error::StreamSizeExceeded { .. } => StatusCode::PAYLOAD_TOO_LARGE,
+//         axum::multer::Error::StreamReadFailed(err) => {
+//             match err.downcast_ref::<axum::multer::Error>() {
 //                 Some(_) => {
-//                     let err = *err.downcast::<axam::multer::Error>().unwrap();
+//                     let err = *err.downcast::<axum::multer::Error>().unwrap();
 //                     return status_code_from_multer_error(err);
 //                 }
 //                 None => {}
 //             }
 
-//             match err.downcast_ref::<axam::Error>() {
+//             match err.downcast_ref::<axum::Error>() {
 //                 Some(_) => {
-//                     let err = *err.downcast::<axam::Error>().unwrap();
+//                     let err = *err.downcast::<axum::Error>().unwrap();
 //                     return status_code_from_axum_error(err);
 //                 }
 //                 None => {}
@@ -67,18 +67,18 @@ impl IntoResponse for FileRouterError {
 
 //             StatusCode::INTERNAL_SERVER_ERROR
 //         }
-//         axam::multer::Error::LockFailure => StatusCode::INTERNAL_SERVER_ERROR,
-//         axam::multer::Error::NoMultipart => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::DecodeContentType(..) => StatusCode::BAD_REQUEST,
-//         axam::multer::Error::NoBoundary => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::LockFailure => StatusCode::INTERNAL_SERVER_ERROR,
+//         axum::multer::Error::NoMultipart => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::DecodeContentType(..) => StatusCode::BAD_REQUEST,
+//         axum::multer::Error::NoBoundary => StatusCode::BAD_REQUEST,
 //         _ => StatusCode::BAD_REQUEST,
 //     }
 // }
 
-// fn status_code_from_axum_error(err: axam::Error) -> StatusCode {
+// fn status_code_from_axum_error(err: axum::Error) -> StatusCode {
 //     let err = err.into_inner();
 
-//     match err.downcast_ref::<axam::extract::rejection::LengthLimitError>() {
+//     match err.downcast_ref::<axum::extract::rejection::LengthLimitError>() {
 //         Some(_) => return StatusCode::PAYLOAD_TOO_LARGE,
 //         None => {}
 //     }
@@ -88,9 +88,9 @@ impl IntoResponse for FileRouterError {
 //         None => {}
 //     }
 
-//     match err.downcast_ref::<axam::Error>() {
+//     match err.downcast_ref::<axum::Error>() {
 //         Some(_) => {
-//             let err = *err.downcast::<axam::Error>().unwrap();
+//             let err = *err.downcast::<axum::Error>().unwrap();
 //             return status_code_from_axum_error(err);
 //         }
 //         None => {}
