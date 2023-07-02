@@ -3,6 +3,8 @@ mod db;
 mod docs;
 mod errors;
 mod file_driver;
+mod multipart;
+mod response;
 mod route_stagings;
 
 use crate::{docs::ApiDoc, file_driver::FileDriver};

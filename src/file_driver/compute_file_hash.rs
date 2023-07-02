@@ -8,7 +8,7 @@ use tokio::io::{AsyncWrite, Error as IOError};
 
 const BUFFER_SIZE: usize = 4 * 1024 * 1024;
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug)]
 pub enum ComputeFileHashError {
     #[error("failed to open file: {0}")]
     OpenFileError(IOError),

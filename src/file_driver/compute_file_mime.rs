@@ -2,7 +2,7 @@ use std::io::Error as IOError;
 use std::path::PathBuf;
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug)]
 pub enum ComputeFileMimeError {
     #[error("failed to infer mime: {0}")]
     InferError(IOError),

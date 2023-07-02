@@ -141,7 +141,7 @@ impl FileDriver {
         staging_uuid: Uuid,
         file_uuid: Uuid,
     ) -> Result<(), CommitStagingIntoFileError> {
-        // NOTE: Rename won't work between different filesystems. Document this.
+        // TODO: Rename won't work between different filesystems. Document this.
         Ok(tokio::fs::rename(
             self.stagings_path.join(staging_uuid.to_string()),
             self.files_path.join(file_uuid.to_string()),
@@ -194,13 +194,13 @@ impl FileDriver {
     // }
 }
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug)]
 pub enum ReadStagingSizeError {
     #[error("failed to read file metadata")]
     ReadFileMetadata(tokio::io::Error),
 }
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug)]
 pub enum WriteStagingError<E> {
     #[error("failed to create file")]
     CreateFile(tokio::io::Error),
@@ -219,7 +219,7 @@ pub struct StagingInfo {
     pub hash: u32,
 }
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug)]
 pub enum ReadStagingInfoError {
     #[error("failed to read staging file metadata")]
     ReadFileMetadata(std::io::Error),
@@ -229,7 +229,7 @@ pub enum ReadStagingInfoError {
     ComputeFileMimeError(#[from] ComputeFileMimeError),
 }
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug)]
 pub enum CommitStagingIntoFileError {
     #[error("io error: {0}")]
     IOError(#[from] tokio::io::Error),
