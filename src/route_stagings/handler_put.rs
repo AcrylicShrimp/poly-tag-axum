@@ -131,6 +131,7 @@ pub async fn handle(
 }
 
 pub mod dto {
+    use crate::file_driver::{ReadStagingInfoError, WriteStagingError};
     use axum::{
         async_trait,
         extract::{multipart::MultipartError, FromRequestParts, Path},
@@ -142,11 +143,6 @@ pub mod dto {
     use thiserror::Error;
     use utoipa::{IntoParams, ToSchema};
     use uuid::Uuid;
-
-    use crate::{
-        file_driver::{ReadStagingInfoError, WriteStagingError},
-        response::IntoStatus,
-    };
 
     #[derive(Deserialize, IntoParams)]
     pub struct Param {
@@ -163,8 +159,8 @@ pub mod dto {
         async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
             let uuid = Path::<String>::from_request_parts(parts, state)
                 .await
-                .map_err(|_| Self::Rejection::InvalidUuid)?;
-            let uuid = Uuid::parse_str(&uuid).map_err(|_| Self::Rejection::InvalidUuid)?;
+                .map_err(|_| ParamRejection::InvalidUuid)?;
+            let uuid = Uuid::parse_str(&uuid).map_err(|_| ParamRejection::InvalidUuid)?;
 
             Ok(Self { uuid })
         }
@@ -188,51 +184,33 @@ pub mod dto {
     }
 
     #[derive(ErrorEnum, Error, Debug)]
-    #[impl_status]
     pub enum ErrRes {
         #[error("internal server error")]
+        #[status(StatusCode::INTERNAL_SERVER_ERROR)]
         PoolError(#[from] diesel_async::pooled_connection::deadpool::PoolError),
         #[error("internal server error")]
+        #[status(StatusCode::INTERNAL_SERVER_ERROR)]
         DieselError(#[from] diesel::result::Error),
         #[error("staging `{uuid}` was not found")]
+        #[status(StatusCode::NOT_FOUND)]
         NotFound { uuid: Uuid },
-        #[error("invalid multipart request")]
+        #[error("{0}")]
+        #[status("0")]
         MultipartError(#[from] MultipartError),
         #[error("multiple fields were found; only one field is allowed")]
+        #[status(StatusCode::BAD_REQUEST)]
         MultipleFieldFound,
         #[error("invalid filename; it must be a valid filename")]
+        #[status(StatusCode::BAD_REQUEST)]
         InvalidFileName,
         #[error("field was no found; a field is required")]
+        #[status(StatusCode::BAD_REQUEST)]
         NoFieldFound,
-        #[error("internal server error")]
-        WriteStagingError(#[from] WriteStagingError<MultipartError>),
-        // Json(json!({
-        //     "error": format!("invalid offset; expected offset to be less than or equal to file size; offset: {}, file size: {}", offset, file_size),
-        // }))
-        #[error("internal server error")]
+        #[error("{0}")]
+        #[status("0")]
+        WriteStagingError(#[from] WriteStagingError),
+        #[error("{0}")]
+        #[status("0")]
         ReadStagingInfoError(#[from] ReadStagingInfoError),
-    }
-
-    impl IntoStatus for ErrRes {
-        fn into_status(&self) -> StatusCode {
-            match self {
-                Self::PoolError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-                Self::DieselError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-                Self::NotFound { .. } => StatusCode::NOT_FOUND,
-                Self::MultipartError(err) => err.status(),
-                Self::MultipleFieldFound => StatusCode::BAD_REQUEST,
-                Self::InvalidFileName => StatusCode::BAD_REQUEST,
-                Self::NoFieldFound => StatusCode::BAD_REQUEST,
-                Self::WriteStagingError(err) => match err {
-                    WriteStagingError::InvalidOffset { offset, file_size } => {
-                        StatusCode::UNPROCESSABLE_ENTITY
-                        // return (
-                        // StatusCode::UNPROCESSABLE_ENTITY,
-                    }
-                    _ => StatusCode::INTERNAL_SERVER_ERROR,
-                },
-                Self::ReadStagingInfoError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            }
-        }
     }
 }

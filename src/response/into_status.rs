@@ -1,4 +1,4 @@
-use axum::http::StatusCode;
+use axum::{extract::multipart::MultipartError, http::StatusCode};
 
 pub trait IntoStatus {
     fn into_status(&self) -> StatusCode;
@@ -13,5 +13,11 @@ impl IntoStatus for () {
 impl IntoStatus for StatusCode {
     fn into_status(&self) -> StatusCode {
         *self
+    }
+}
+
+impl IntoStatus for MultipartError {
+    fn into_status(&self) -> StatusCode {
+        self.status()
     }
 }

@@ -1,7 +1,6 @@
 mod app_state;
 mod db;
 mod docs;
-mod errors;
 mod file_driver;
 mod multipart;
 mod response;

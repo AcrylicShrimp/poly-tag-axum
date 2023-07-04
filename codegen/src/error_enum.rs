@@ -1,7 +1,10 @@
 use proc_macro::TokenStream;
 use proc_macro_error::abort_call_site;
 use quote::quote;
-use syn::{parse_macro_input, Attribute, Data, DeriveInput, Fields, Meta, Path};
+use syn::{
+    parse::{Parse, ParseStream},
+    parse_macro_input, parse_str, Attribute, Data, DeriveInput, Ident, LitInt, LitStr, Meta, Path,
+};
 
 pub fn error_enum(item: TokenStream) -> TokenStream {
     let derive = parse_macro_input!(item as DeriveInput);
@@ -10,27 +13,13 @@ pub fn error_enum(item: TokenStream) -> TokenStream {
     } else {
         return TokenStream::new();
     };
-    let has_impl_status = derive
-        .attrs
-        .iter()
-        .any(|attr| attr.path().is_ident("impl_status"));
+    let (impl_generics, ty_generics, where_clause) = derive.generics.split_for_impl();
 
     let ty_name = &derive.ident;
     let mut into_status_impls = Vec::new();
 
     for variant in &input.variants {
         let ident = &variant.ident;
-        let fields = match &variant.fields {
-            Fields::Named(_) => {
-                quote! { { .. } }
-            }
-            Fields::Unnamed(_) => {
-                quote! { (..) }
-            }
-            Fields::Unit => {
-                quote! {}
-            }
-        };
         let status_attr = variant
             .attrs
             .iter()
@@ -41,44 +30,56 @@ pub fn error_enum(item: TokenStream) -> TokenStream {
                 meta: Meta::List(meta_list),
                 ..
             }) => {
-                let path = match meta_list.parse_args::<Path>() {
-                    Ok(path) => path,
+                let item = match meta_list.parse_args::<StatusAttrItem>() {
+                    Ok(item) => item,
                     Err(err) => {
                         abort_call_site!(err);
                     }
                 };
-                into_status_impls.push(quote! {
-                    #ty_name::#ident #fields => #path,
-                });
+
+                match item {
+                    StatusAttrItem::FieldName(name) => {
+                        let name = match parse_str::<Ident>(&name.value())
+                            .map(|name| quote! { #name })
+                            .or_else(|_| {
+                                parse_str::<LitInt>(&name.value()).map(|name| quote! { #name })
+                            }) {
+                            Ok(name) => name,
+                            Err(_) => {
+                                abort_call_site!("invalid field name: {}", name.value());
+                            }
+                        };
+                        into_status_impls.push(quote! {
+                            #ty_name::#ident { #name: field, .. } => <_ as crate::response::IntoStatus>::into_status(field),
+                        });
+                    }
+                    StatusAttrItem::Path(path) => {
+                        into_status_impls.push(quote! {
+                            #ty_name::#ident { .. } => #path,
+                        });
+                    }
+                }
             }
             _ => {
                 into_status_impls.push(quote! {
-                    #ty_name::#ident #fields => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+                    #ty_name::#ident { .. } => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
                 });
             }
         }
     }
 
-    let into_status_impl = if has_impl_status {
-        quote! {}
-    } else {
-        quote! {
-            impl crate::response::IntoStatus for #ty_name {
-                fn into_status(&self) -> axum::http::StatusCode {
-                    match self {
-                        #(#into_status_impls)*
-                    }
+    TokenStream::from(quote! {
+        impl #impl_generics crate::response::IntoStatus for #ty_name #ty_generics #where_clause {
+            fn into_status(&self) -> axum::http::StatusCode {
+                match self {
+                    #(#into_status_impls)*
                 }
             }
         }
-    };
 
-    TokenStream::from(quote! {
-        #into_status_impl
-
-        impl axum::response::IntoResponse for #ty_name {
+        impl #impl_generics axum::response::IntoResponse for #ty_name #ty_generics #where_clause {
             fn into_response(self) -> axum::response::Response {
-                let status_code = <Self as crate::response::IntoStatus>::into_status(&self);
+                let status = <_ as crate::response::IntoStatus>::into_status(&self);
                 #[cfg(debug_assertions)]
                 let body = axum::Json(serde_json::json!({
                     "error": format!("{:#?}", self)
@@ -87,8 +88,24 @@ pub fn error_enum(item: TokenStream) -> TokenStream {
                 let body = axum::Json(serde_json::json!({
                     "error": self.to_string()
                 }));
-                (status_code, body).into_response()
+                (status, body).into_response()
             }
         }
     })
+}
+
+#[derive(Debug, Clone)]
+enum StatusAttrItem {
+    FieldName(LitStr),
+    Path(Path),
+}
+
+impl Parse for StatusAttrItem {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if input.peek(LitStr) {
+            Ok(Self::FieldName(input.parse()?))
+        } else {
+            Ok(Self::Path(input.parse()?))
+        }
+    }
 }

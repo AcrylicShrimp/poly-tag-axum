@@ -119,8 +119,8 @@ pub mod dto {
         #[error("staging `{uuid}` was not found")]
         #[status(StatusCode::NOT_FOUND)]
         NotFound { uuid: Uuid },
-        #[error("internal server error")]
-        #[status(StatusCode::INTERNAL_SERVER_ERROR)]
-        FileDriverError(#[from] ReadStagingSizeError),
+        #[error("{0}")]
+        #[status("0")]
+        ReadStagingSizeError(#[from] ReadStagingSizeError),
     }
 }

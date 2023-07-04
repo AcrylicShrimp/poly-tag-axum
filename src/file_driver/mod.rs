@@ -1,7 +1,5 @@
-mod compute_file_hash;
-mod compute_file_mime;
-
-use axum::body::Bytes;
+use axum::{body::Bytes, extract::multipart::MultipartError, http::StatusCode};
+use codegen::ErrorEnum;
 use compute_file_hash::*;
 use compute_file_mime::*;
 use futures::{Stream, TryStreamExt};
@@ -15,6 +13,9 @@ use tokio::{
     io::{AsyncSeekExt, AsyncWriteExt, BufWriter},
 };
 use uuid::Uuid;
+
+mod compute_file_hash;
+mod compute_file_mime;
 
 #[derive(Debug, Clone)]
 pub struct FileDriver {
@@ -76,12 +77,12 @@ impl FileDriver {
         }
     }
 
-    pub async fn write_staging<E>(
+    pub async fn write_staging(
         &self,
         uuid: Uuid,
         offset: Option<u64>,
-        stream: impl Stream<Item = Result<Bytes, E>>,
-    ) -> Result<u64, WriteStagingError<E>> {
+        stream: impl Stream<Item = Result<Bytes, MultipartError>>,
+    ) -> Result<u64, WriteStagingError> {
         let path = self.stagings_path.join(uuid.to_string());
         let mut file = OpenOptions::new()
             .create(true)
@@ -194,43 +195,54 @@ impl FileDriver {
     // }
 }
 
-#[derive(Error, Debug)]
+#[derive(ErrorEnum, Error, Debug)]
 pub enum ReadStagingSizeError {
-    #[error("failed to read file metadata")]
+    #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     ReadFileMetadata(tokio::io::Error),
 }
 
-#[derive(Error, Debug)]
-pub enum WriteStagingError<E> {
-    #[error("failed to create file")]
+#[derive(ErrorEnum, Error, Debug)]
+pub enum WriteStagingError {
+    #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     CreateFile(tokio::io::Error),
-    #[error("failed to read file metadata")]
+    #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     ReadFileMetadata(tokio::io::Error),
     #[error("invalid offset; offset is `{offset}`, but file size is `{file_size}`")]
+    #[status(StatusCode::BAD_REQUEST)]
     InvalidOffset { offset: u64, file_size: u64 },
-    #[error("failed to read from stream")]
-    ReadFromStream(#[from] E),
-    #[error("failed to write to file")]
+    #[error("{0}")]
+    #[status("0")]
+    ReadFromStream(#[from] MultipartError),
+    #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     WriteToFile(tokio::io::Error),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StagingInfo {
     pub mime: &'static str,
     pub hash: u32,
 }
 
-#[derive(Error, Debug)]
+#[derive(ErrorEnum, Error, Debug)]
 pub enum ReadStagingInfoError {
-    #[error("failed to read staging file metadata")]
+    #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     ReadFileMetadata(std::io::Error),
-    #[error("failed to compute file hash")]
+    #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     ComputeFileHashError(#[from] ComputeFileHashError),
-    #[error("failed to compute file mime")]
+    #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     ComputeFileMimeError(#[from] ComputeFileMimeError),
 }
 
-#[derive(Error, Debug)]
+#[derive(ErrorEnum, Error, Debug)]
 pub enum CommitStagingIntoFileError {
-    #[error("io error: {0}")]
+    #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     IOError(#[from] tokio::io::Error),
 }

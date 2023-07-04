@@ -6,6 +6,7 @@ use axum::{
     },
     http::StatusCode,
 };
+use codegen::ErrorEnum;
 use thiserror::Error;
 
 pub struct MultipartParser<'c, R, E1, E2> {
@@ -14,7 +15,11 @@ pub struct MultipartParser<'c, R, E1, E2> {
     writer: &'c (dyn Fn(usize, Field) -> Result<R, E2> + Send + Sync),
 }
 
-impl<'c, R, E1, E2> MultipartParser<'c, R, E1, E2> {
+impl<'c, R, E1, E2> MultipartParser<'c, R, E1, E2>
+where
+    E1: std::fmt::Debug + IntoStatus,
+    E2: std::fmt::Debug + IntoStatus,
+{
     pub fn new(
         max_field_count: Option<usize>,
         filter: Option<&'c (dyn Fn(usize, &Field) -> Result<bool, E1> + Send + Sync)>,
@@ -56,29 +61,22 @@ impl<'c, R, E1, E2> MultipartParser<'c, R, E1, E2> {
     }
 }
 
-#[derive(Error, Debug)]
-pub enum MultipartParserError<E1, E2> {
+#[derive(ErrorEnum, Error, Debug)]
+pub enum MultipartParserError<E1, E2>
+where
+    E1: std::fmt::Debug + IntoStatus,
+    E2: std::fmt::Debug + IntoStatus,
+{
     #[error("internal server error")]
+    #[status(StatusCode::INTERNAL_SERVER_ERROR)]
     MultipartError(#[from] MultipartError),
-    #[error("internal server error")]
+    #[error("{0}")]
+    #[status("0")]
     FilterError(E1),
-    #[error("internal server error")]
+    #[error("{0}")]
+    #[status("0")]
     WriterError(E2),
     #[error("fields cannot be more than {0}")]
+    #[status(StatusCode::BAD_REQUEST)]
     MaxFieldCountError(usize),
-}
-
-impl<E1, E2> IntoStatus for MultipartParserError<E1, E2>
-where
-    E1: IntoStatus,
-    E2: IntoStatus,
-{
-    fn into_status(&self) -> StatusCode {
-        match self {
-            MultipartParserError::MultipartError(err) => err.status(),
-            MultipartParserError::FilterError(err) => err.into_status(),
-            MultipartParserError::WriterError(err) => err.into_status(),
-            MultipartParserError::MaxFieldCountError(_) => StatusCode::BAD_REQUEST,
-        }
-    }
 }
