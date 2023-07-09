@@ -109,9 +109,13 @@ pub mod dto {
     #[serde(rename_all = "camelCase")]
     pub struct FileUploadRes {
         pub uuid: Uuid,
+        #[schema(example = "file.txt")]
         pub name: String,
+        #[schema(example = "text/plain")]
         pub mime: &'static str,
+        #[schema(example = "1024")]
         pub size: u64,
+        #[schema(example = "1234")]
         pub hash: u32,
         pub uploaded_at: NaiveDateTime,
     }
