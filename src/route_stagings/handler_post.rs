@@ -13,7 +13,7 @@ use uuid::Uuid;
     path = "/stagings",
     responses(
         (status = CREATED, description = "Allocate a new staging file", body = StagingPostRes),
-        (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody, example = json!({ "error": "internal server error" })),
+        (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody),
     ),
 )]
 #[debug_handler(state = AppState)]

@@ -8,5 +8,4 @@ CREATE TABLE tag_templates (
   value_type tag_value_type NULL,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
-CREATE INDEX ON tag_templates(created_at ASC);
-CREATE INDEX ON tag_templates(name ASC);
+CREATE INDEX ON tag_templates(name ASC, created_at DESC, uuid ASC);

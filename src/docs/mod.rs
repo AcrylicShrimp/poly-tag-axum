@@ -7,17 +7,23 @@ use utoipa::{OpenApi, ToSchema};
         crate::route_stagings::handler_get::handle,
         crate::route_stagings::handler_put::handle,
 
+        crate::route_tag_templates::handler_list::handle,
         crate::route_tag_templates::handler_post::handle,
     ),
     components(
         schemas(ErrorBody),
+
+        schemas(crate::db::model::TagTemplate),
+        schemas(crate::db::model::TagValueTypeKind),
         
         schemas(crate::route_stagings::handler_post::dto::StagingPostRes),
         schemas(crate::route_stagings::handler_get::dto::StagingGetRes),
         schemas(crate::route_stagings::handler_put::dto::StagingPutRes),
 
+        schemas(crate::route_tag_templates::handler_list::dto::TagTemplateListReqQuery),
+        schemas(crate::route_tag_templates::handler_list::dto::TagTemplateListRes),
+
         schemas(crate::route_tag_templates::handler_post::dto::TagTemplatePostReqBody),
-        schemas(crate::route_tag_templates::handler_post::dto::TagTemplatePostReqBodyValueTypeKind),
         schemas(crate::route_tag_templates::handler_post::dto::TagTemplatePostRes),
     ),
     tags(
@@ -29,5 +35,6 @@ pub struct ApiDoc;
 
 #[derive(ToSchema)]
 pub struct ErrorBody {
+    #[schema(example = "internal server error")]
     pub error: String,
 }

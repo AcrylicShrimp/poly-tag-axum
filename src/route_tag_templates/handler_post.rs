@@ -14,7 +14,7 @@ use uuid::Uuid;
     request_body = TagTemplatePostReqBody,
     responses(
         (status = CREATED, description = "A new tag template has been created", body = TagTemplatePostRes),
-        (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody, example = json!({ "error": "internal server error" })),
+        (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody),
     ),
 )]
 #[debug_handler(state = AppState)]
@@ -45,37 +45,22 @@ pub async fn handle(
 }
 
 pub mod dto {
+    use crate::db::model::TagValueTypeKind;
     use axum::http::StatusCode;
     use codegen::ErrorEnum;
-    use diesel_derive_enum::DbEnum;
     use serde::{Deserialize, Serialize};
     use thiserror::Error;
     use utoipa::ToSchema;
     use uuid::Uuid;
 
     #[derive(Deserialize, ToSchema)]
-    #[schema(example = json!({
-        "name": "Author",
-        "description": "author of the file",
-        "value_type": "string",
-    }))]
     pub struct TagTemplatePostReqBody {
+        #[schema(example = "Author")]
         pub name: String,
+        #[schema(example = "Author of the file.")]
         pub description: Option<String>,
-        pub value_type: Option<TagTemplatePostReqBodyValueTypeKind>,
-    }
-
-    #[derive(DbEnum, Deserialize, ToSchema, Debug)]
-    #[ExistingTypePath = "crate::db::schema::sql_types::TagValueType"]
-    pub enum TagTemplatePostReqBodyValueTypeKind {
-        #[serde(alias = "string")]
-        String,
-        #[serde(alias = "int")]
-        #[serde(alias = "integer")]
-        Integer,
-        #[serde(alias = "bool")]
-        #[serde(alias = "boolean")]
-        Boolean,
+        #[schema(example = "string")]
+        pub value_type: Option<TagValueTypeKind>,
     }
 
     #[derive(Serialize, ToSchema)]

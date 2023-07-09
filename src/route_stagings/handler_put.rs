@@ -28,7 +28,7 @@ use uuid::Uuid;
         (status = OK, description = "Query for an existing staging file", body = StagingPutRes),
         (status = BAD_REQUEST, description = "Given uuid is not valid", body = ErrorBody, example = json!({ "error": "invalid uuid" })),
         (status = NOT_FOUND, description = "Staging was not found", body = ErrorBody, example = json!({ "error": "staging was not found with uuid `3fa85f64-5717-4562-b3fc-2c963f66afa6`" })),
-        (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody, example = json!({ "error": "internal server error" }))
+        (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody)
     )
 )]
 #[debug_handler(state = AppState)]
