@@ -10,9 +10,9 @@ diesel::table! {
     files (uuid) {
         uuid -> Uuid,
         name -> Text,
-        mime -> Text,
-        size -> Int8,
-        hash -> Int8,
+        mime -> Nullable<Text>,
+        size -> Nullable<Int8>,
+        hash -> Nullable<Int8>,
         uploaded_at -> Timestamp,
     }
 }
@@ -38,8 +38,7 @@ diesel::table! {
 }
 
 diesel::table! {
-    tags (uuid) {
-        uuid -> Uuid,
+    tags (template_uuid, file_uuid) {
         template_uuid -> Uuid,
         file_uuid -> Uuid,
         value_string -> Nullable<Text>,

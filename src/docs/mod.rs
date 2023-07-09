@@ -9,6 +9,8 @@ use utoipa::{OpenApi, ToSchema};
 
         crate::route_tag_templates::handler_list::handle,
         crate::route_tag_templates::handler_post::handle,
+        
+        crate::route_files::handler_prepare::handle,
     ),
     components(
         schemas(ErrorBody),
@@ -25,10 +27,16 @@ use utoipa::{OpenApi, ToSchema};
 
         schemas(crate::route_tag_templates::handler_post::dto::TagTemplatePostReqBody),
         schemas(crate::route_tag_templates::handler_post::dto::TagTemplatePostRes),
+
+        schemas(crate::route_files::handler_prepare::dto::FilePrepareReqBody),
+        schemas(crate::route_files::handler_prepare::dto::FilePrepareReqBodyTag),
+        schemas(crate::route_files::handler_prepare::dto::FilePrepareReqBodyTagValue),
+        schemas(crate::route_files::handler_prepare::dto::FilePrepareRes),
     ),
     tags(
         (name = "staging", description = "File staging API for upload."),
         (name = "tag-template", description = "Tag template API for file tagging."),
+        (name = "file", description = "File API for file management."),
     ),
 )]
 pub struct ApiDoc;

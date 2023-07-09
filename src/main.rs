@@ -4,6 +4,7 @@ mod docs;
 mod file_driver;
 mod multipart;
 mod response;
+mod route_files;
 mod route_stagings;
 mod route_tag_templates;
 
@@ -47,6 +48,7 @@ async fn main() {
     };
 
     let app = app
+        .merge(route_files::router())
         .merge(route_stagings::router())
         .merge(route_tag_templates::router())
         .fallback(handler_fallback)
