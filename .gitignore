@@ -3,6 +3,9 @@
 # .DS_Store files
 .DS_Store
 
+# .vscode
+.vscode/settings.json
+
 # env files
 .env
 .envrc
