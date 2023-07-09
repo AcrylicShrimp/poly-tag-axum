@@ -19,7 +19,7 @@ use dto::*;
     tag = "tag-template",
     path = "/tag-templates",
     params(
-        TagTemplateListReqQuery,
+        QueryParam,
     ),
     responses(
         (status = OK, description = "Tag templates are successfully fetched", body = TagTemplateListRes),
@@ -29,7 +29,7 @@ use dto::*;
 #[debug_handler(state = AppState)]
 pub async fn handle(
     State(db_pool): State<DBPool>,
-    Query(query): Query<TagTemplateListReqQuery>,
+    Query(query): Query<QueryParam>,
 ) -> Result<(StatusCode, Json<TagTemplateListRes>), ErrRes> {
     use crate::db::schema::tag_templates::dsl::*;
 
@@ -61,11 +61,10 @@ pub mod dto {
     use thiserror::Error;
     use utoipa::{IntoParams, ToSchema};
 
-    #[derive(Deserialize, ToSchema, IntoParams)]
+    #[derive(Deserialize, IntoParams)]
     #[serde(rename_all = "camelCase")]
-    pub struct TagTemplateListReqQuery {
-        /// The page number.
-        #[schema(example = "0")]
+    #[into_params(parameter_in = Query)]
+    pub struct QueryParam {
         pub page: Option<u32>,
     }
 

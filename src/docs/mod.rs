@@ -15,7 +15,6 @@ use utoipa::{OpenApi, ToSchema};
         schemas(crate::db::model::TagTemplate),
         schemas(crate::db::model::TagValueTypeKind),
         
-        schemas(crate::route_tag_templates::handler_list::dto::TagTemplateListReqQuery),
         schemas(crate::route_tag_templates::handler_list::dto::TagTemplateListRes),
 
         schemas(crate::route_tag_templates::handler_post::dto::TagTemplatePostReqBody),

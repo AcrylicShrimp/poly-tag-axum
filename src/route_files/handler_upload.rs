@@ -25,7 +25,7 @@ use dto::*;
         QueryParam,
     ),
     responses(
-        (status = CREATED, description = "A new file has been created", body = FileUploadRes),
+        (status = OK, description = "Upload was successful", body = FileUploadRes),
         (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody),
     ),
 )]
