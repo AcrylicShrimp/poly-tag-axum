@@ -7,6 +7,7 @@ use utoipa::{OpenApi, ToSchema};
         crate::route_tag_templates::handler_post::handle,
         
         crate::route_files::handler_prepare::handle,
+        crate::route_files::handler_upload::handle,
     ),
     components(
         schemas(ErrorBody),
@@ -24,6 +25,8 @@ use utoipa::{OpenApi, ToSchema};
         schemas(crate::route_files::handler_prepare::dto::FilePrepareReqBodyTag),
         schemas(crate::route_files::handler_prepare::dto::FilePrepareReqBodyTagValue),
         schemas(crate::route_files::handler_prepare::dto::FilePrepareRes),
+
+        schemas(crate::route_files::handler_upload::dto::FileUploadRes),
     ),
     tags(
         (name = "tag-template", description = "Tag template API for file tagging."),

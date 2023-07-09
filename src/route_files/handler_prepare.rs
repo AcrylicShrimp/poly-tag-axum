@@ -144,6 +144,7 @@ pub mod dto {
     use uuid::Uuid;
 
     #[derive(Deserialize, ToSchema)]
+    #[serde(rename_all = "camelCase")]
     pub struct FilePrepareReqBody {
         #[schema(example = "Foo.txt")]
         pub name: String,
@@ -151,6 +152,7 @@ pub mod dto {
     }
 
     #[derive(Deserialize, ToSchema)]
+    #[serde(rename_all = "camelCase")]
     pub struct FilePrepareReqBodyTag {
         pub template_uuid: Uuid,
         pub value: Option<FilePrepareReqBodyTagValue>,
@@ -175,6 +177,7 @@ pub mod dto {
     }
 
     #[derive(Serialize, ToSchema)]
+    #[serde(rename_all = "camelCase")]
     pub struct FilePrepareRes {
         pub uuid: Uuid,
     }

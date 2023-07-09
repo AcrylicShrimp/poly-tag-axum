@@ -7,6 +7,7 @@ use utoipa::ToSchema;
 use uuid::Uuid;
 
 #[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct Staging {
     pub uuid: Uuid,
     pub staged_at: NaiveDateTime,
@@ -36,6 +37,7 @@ impl Display for TagValueTypeKind {
 }
 
 #[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct TagTemplate {
     pub uuid: Uuid,
     #[schema(example = "Author")]
@@ -47,22 +49,29 @@ pub struct TagTemplate {
 }
 
 #[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct TagTemplateCompact {
     pub uuid: Uuid,
     pub value_type: Option<TagValueTypeKind>,
 }
 
 #[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct File {
     pub uuid: Uuid,
+    #[schema(example = "file.txt")]
     pub name: String,
+    #[schema(example = "text/plain")]
     pub mime: String,
+    #[schema(example = "1024")]
     pub size: i64,
+    #[schema(example = "1234567890")]
     pub hash: i64,
     pub uploaded_at: NaiveDateTime,
 }
 
 #[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct FileHeader {
     pub uuid: Uuid,
     pub name: String,

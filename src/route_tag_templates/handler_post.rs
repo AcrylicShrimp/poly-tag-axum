@@ -54,6 +54,7 @@ pub mod dto {
     use uuid::Uuid;
 
     #[derive(Deserialize, ToSchema)]
+    #[serde(rename_all = "camelCase")]
     pub struct TagTemplatePostReqBody {
         #[schema(example = "Author")]
         pub name: String,
@@ -64,6 +65,7 @@ pub mod dto {
     }
 
     #[derive(Serialize, ToSchema)]
+    #[serde(rename_all = "camelCase")]
     pub struct TagTemplatePostRes {
         pub uuid: Uuid,
     }

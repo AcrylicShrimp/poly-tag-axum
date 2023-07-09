@@ -62,6 +62,7 @@ pub mod dto {
     use utoipa::{IntoParams, ToSchema};
 
     #[derive(Deserialize, ToSchema, IntoParams)]
+    #[serde(rename_all = "camelCase")]
     pub struct TagTemplateListReqQuery {
         /// The page number.
         #[schema(example = "0")]
@@ -69,6 +70,7 @@ pub mod dto {
     }
 
     #[derive(Serialize, ToSchema)]
+    #[serde(rename_all = "camelCase")]
     pub struct TagTemplateListRes {
         #[schema(example = "0")]
         pub page: u32,

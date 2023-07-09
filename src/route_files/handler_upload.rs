@@ -20,6 +20,10 @@ use dto::*;
     operation_id = "file-upload",
     tag = "file",
     path = "/files/{uuid}",
+    params(
+        PathParam,
+        QueryParam,
+    ),
     responses(
         (status = CREATED, description = "A new file has been created", body = FileUploadRes),
         (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody),
@@ -88,16 +92,21 @@ pub mod dto {
     use uuid::Uuid;
 
     #[derive(Deserialize, IntoParams)]
+    #[serde(rename_all = "camelCase")]
+    #[into_params(parameter_in = Path)]
     pub struct PathParam {
         pub uuid: Uuid,
     }
 
     #[derive(Deserialize, IntoParams)]
+    #[serde(rename_all = "camelCase")]
+    #[into_params(parameter_in = Query)]
     pub struct QueryParam {
         pub offset: Option<u64>,
     }
 
     #[derive(Serialize, ToSchema)]
+    #[serde(rename_all = "camelCase")]
     pub struct FileUploadRes {
         pub uuid: Uuid,
         pub name: String,
