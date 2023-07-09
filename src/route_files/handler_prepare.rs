@@ -51,11 +51,19 @@ pub async fn handle(
         .load::<TagTemplateCompact>(db_connection)
         .await?;
 
-    for index in 0..templates.len() {
-        if templates[index].uuid != body.tags[index].template_uuid {
-            return Err(ErrRes::InvalidTagTemplate(body.tags[index].template_uuid));
-        }
+    if templates.len() != body.tags.len() {
+        for index in 0..body.tags.len() {
+            if templates.len() <= index {
+                return Err(ErrRes::InvalidTagTemplate(body.tags[index].template_uuid));
+            }
 
+            if body.tags[index].template_uuid != templates[index].uuid {
+                return Err(ErrRes::InvalidTagTemplate(body.tags[index].template_uuid));
+            }
+        }
+    }
+
+    for index in 0..templates.len() {
         match (templates[index].value_type, body.tags[index].value.as_ref()) {
             (Some(template_type_kind), Some(tag_value)) => {
                 let type_kind = tag_value.type_kind();
