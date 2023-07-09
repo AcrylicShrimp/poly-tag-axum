@@ -8,3 +8,4 @@ CREATE TABLE files (
   uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX ON files(uploaded_at ASC);
+CREATE INDEX ON files(mime ASC, size ASC, hash ASC);

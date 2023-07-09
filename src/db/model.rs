@@ -51,3 +51,19 @@ pub struct TagTemplateCompact {
     pub uuid: Uuid,
     pub value_type: Option<TagValueTypeKind>,
 }
+
+#[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
+pub struct File {
+    pub uuid: Uuid,
+    pub name: String,
+    pub mime: String,
+    pub size: i64,
+    pub hash: i64,
+    pub uploaded_at: NaiveDateTime,
+}
+
+#[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
+pub struct FileHeader {
+    pub uuid: Uuid,
+    pub name: String,
+}

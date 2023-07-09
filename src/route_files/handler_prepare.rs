@@ -16,7 +16,7 @@ use uuid::Uuid;
     path = "/files",
     request_body = FilePrepareReqBody,
     responses(
-        (status = CREATED, description = "A new file has been created", body = TagTemplatePostRes),
+        (status = CREATED, description = "A new file has been created", body = FilePrepareRes),
         (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody),
     ),
 )]
