@@ -1,6 +1,9 @@
 use crate::{
     app_state::AppState,
-    db::{model::TagTemplateCompact, DBPool},
+    db::{
+        model::{InsertableTag, TagTemplateCompact},
+        DBPool,
+    },
 };
 use axum::{debug_handler, extract::State, http::StatusCode, Json};
 use diesel::prelude::*;
@@ -29,7 +32,7 @@ pub async fn handle(
     use crate::db::schema::tag_templates::dsl as tag_templates;
     use crate::db::schema::tags::dsl as tags;
 
-    if body.name.len() == 0 {
+    if body.name.is_empty() {
         return Err(ErrRes::FilenameTooShort(body.name));
     }
 
@@ -104,35 +107,35 @@ pub async fn handle(
                     .execute(db_connection)
                     .await?;
 
-                let query = diesel::insert_into(tags::tags);
-                let mut filled_query = None;
+                if !body.tags.is_empty() {
+                    let tags = Vec::from_iter(body.tags.iter().map(|tag| {
+                        let (value_string, value_integer, value_boolean) = match &tag.value {
+                            Some(tag_value) => match tag_value {
+                                FilePrepareReqBodyTagValue::String(value) => {
+                                    (Some(value.as_str()), None, None)
+                                }
+                                FilePrepareReqBodyTagValue::Integer(value) => {
+                                    (None, Some(*value), None)
+                                }
+                                FilePrepareReqBodyTagValue::Boolean(value) => {
+                                    (None, None, Some(*value))
+                                }
+                            },
+                            None => (None, None, None),
+                        };
+                        InsertableTag {
+                            template_uuid: tag.template_uuid,
+                            file_uuid,
+                            value_string,
+                            value_integer,
+                            value_boolean,
+                        }
+                    }));
 
-                for tag in &body.tags {
-                    let (value_string, value_integer, value_boolean) = match &tag.value {
-                        Some(tag_value) => match tag_value {
-                            FilePrepareReqBodyTagValue::String(value) => {
-                                (Some(tags::value_string.eq(value)), None, None)
-                            }
-                            FilePrepareReqBodyTagValue::Integer(value) => {
-                                (None, Some(tags::value_integer.eq(value)), None)
-                            }
-                            FilePrepareReqBodyTagValue::Boolean(value) => {
-                                (None, None, Some(tags::value_boolean.eq(value)))
-                            }
-                        },
-                        None => (None, None, None),
-                    };
-                    filled_query = Some(query.values((
-                        tags::template_uuid.eq(tag.template_uuid),
-                        tags::file_uuid.eq(file_uuid),
-                        value_string,
-                        value_integer,
-                        value_boolean,
-                    )));
-                }
-
-                if let Some(filled_query) = filled_query {
-                    filled_query.execute(db_connection).await?;
+                    diesel::insert_into(tags::tags)
+                        .values(tags)
+                        .execute(db_connection)
+                        .await?;
                 }
 
                 Ok((StatusCode::OK, Json(FilePrepareRes { uuid: file_uuid })))

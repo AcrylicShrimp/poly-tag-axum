@@ -55,9 +55,26 @@ pub struct TagTemplateCompact {
     pub value_type: Option<TagValueTypeKind>,
 }
 
+#[derive(Deserialize, Insertable)]
+#[diesel(table_name = super::schema::tags)]
+pub struct InsertableTag<'a> {
+    pub template_uuid: Uuid,
+    pub file_uuid: Uuid,
+    pub value_string: Option<&'a str>,
+    pub value_integer: Option<i64>,
+    pub value_boolean: Option<bool>,
+}
+
 #[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct File {
+pub struct FileHeader {
+    pub uuid: Uuid,
+    pub name: String,
+}
+
+#[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FileWithTags {
     pub uuid: Uuid,
     #[schema(example = "file.txt")]
     pub name: String,
@@ -68,11 +85,4 @@ pub struct File {
     #[schema(example = "1234567890")]
     pub hash: i64,
     pub uploaded_at: NaiveDateTime,
-}
-
-#[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct FileHeader {
-    pub uuid: Uuid,
-    pub name: String,
 }
