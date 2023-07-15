@@ -138,7 +138,10 @@ pub async fn handle(
                         .await?;
                 }
 
-                Ok((StatusCode::OK, Json(FilePrepareRes { uuid: file_uuid })))
+                Ok((
+                    StatusCode::CREATED,
+                    Json(FilePrepareRes { uuid: file_uuid }),
+                ))
             }
             .scope_boxed()
         })
@@ -180,9 +183,9 @@ pub mod dto {
     impl FilePrepareReqBodyTagValue {
         pub fn type_kind(&self) -> TagValueTypeKind {
             match self {
-                FilePrepareReqBodyTagValue::String(_) => TagValueTypeKind::String,
-                FilePrepareReqBodyTagValue::Integer(_) => TagValueTypeKind::Integer,
-                FilePrepareReqBodyTagValue::Boolean(_) => TagValueTypeKind::Boolean,
+                Self::String(_) => TagValueTypeKind::String,
+                Self::Integer(_) => TagValueTypeKind::Integer,
+                Self::Boolean(_) => TagValueTypeKind::Boolean,
             }
         }
     }
