@@ -13,6 +13,8 @@ use chrono::Utc;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 use dto::*;
+use meilisearch_sdk::Client;
+use std::sync::Arc;
 
 /// Upload a file.
 #[utoipa::path(
@@ -33,6 +35,7 @@ use dto::*;
 pub async fn handle(
     State(db_pool): State<DBPool>,
     State(file_driver): State<FileDriver>,
+    State(meilisearch_client): State<Arc<Client>>,
     path_param: Path<PathParam>,
     query_param: Query<QueryParam>,
     mut body: BodyStream,
@@ -66,6 +69,10 @@ pub async fn handle(
             files::uploaded_at.eq(now),
         ))
         .execute(db_connection)
+        .await?;
+    meilisearch_client
+        .index("files")
+        .add_documents(&[&file], Some("uuid"))
         .await?;
 
     Ok((
@@ -128,6 +135,9 @@ pub mod dto {
         #[error("internal server error")]
         #[status(StatusCode::INTERNAL_SERVER_ERROR)]
         DieselError(#[from] diesel::result::Error),
+        #[error("internal server error")]
+        #[status(StatusCode::INTERNAL_SERVER_ERROR)]
+        MeilisearchError(#[from] meilisearch_sdk::errors::Error),
         #[error("file `{0}` is not found")]
         #[status(StatusCode::NOT_FOUND)]
         FileNotFound(Uuid),

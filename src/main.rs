@@ -31,7 +31,9 @@ async fn main() {
     let mut file_driver = FileDriver::new("./files"); // TODO: make this configurable
     file_driver.create_dirs().await;
 
-    let app_state = AppState::new(db_pool, file_driver);
+    let meilisearch_client = db::init_meilisearch_client().await;
+
+    let app_state = AppState::new(db_pool, file_driver, meilisearch_client);
     let app = Router::new();
 
     let port = 3000; // TODO: make this configurable

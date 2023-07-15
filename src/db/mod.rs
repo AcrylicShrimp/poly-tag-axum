@@ -6,6 +6,8 @@ use diesel_async::{
     AsyncPgConnection,
 };
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use meilisearch_sdk::Client;
+use std::time::Duration;
 use thiserror::Error;
 
 pub mod model;
@@ -56,4 +58,25 @@ pub fn init_pool() -> DBPool {
         .max_size(pool_max_size)
         .build()
         .expect("failed to create database connection pool")
+}
+
+pub async fn init_meilisearch_client() -> Client {
+    tracing::info!("initializing meilisearch client");
+
+    let meilisearch_url =
+        std::env::var("MEILISEARCH_URL").expect("env var `MEILISEARCH_URL` must be set");
+    let meilisearch_api_key =
+        std::env::var("MEILISEARCH_API_KEY").expect("env var `MEILISEARCH_API_KEY` must be set");
+
+    let client = Client::new(meilisearch_url, Some(meilisearch_api_key));
+
+    client
+        .create_index("files", Some("uuid"))
+        .await
+        .expect("failed to create meilisearch index")
+        .wait_for_completion(&client, Some(Duration::from_secs(1)), None)
+        .await
+        .expect("failed to wait for meilisearch index creation");
+
+    client
 }
