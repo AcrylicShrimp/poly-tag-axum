@@ -26,6 +26,16 @@ pub enum TagValueTypeKind {
     Boolean,
 }
 
+impl TagValueTypeKind {
+    pub fn into_column_name(self) -> &'static str {
+        match self {
+            TagValueTypeKind::String => "value_string",
+            TagValueTypeKind::Integer => "value_integer",
+            TagValueTypeKind::Boolean => "value_boolean",
+        }
+    }
+}
+
 impl Display for TagValueTypeKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -63,6 +73,13 @@ pub struct InsertableTag<'a> {
     pub value_string: Option<&'a str>,
     pub value_integer: Option<i64>,
     pub value_boolean: Option<bool>,
+}
+
+#[derive(QueryableByName, Queryable, Serialize, Deserialize, ToSchema, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FileUuid {
+    #[diesel(sql_type = diesel::sql_types::Uuid)]
+    pub uuid: Uuid,
 }
 
 #[derive(Queryable, Serialize, Deserialize, ToSchema, Debug)]

@@ -49,7 +49,6 @@ async fn main() {
 
     let app = app
         .merge(route_files::router())
-        // .merge(route_stagings::router())
         .merge(route_tag_templates::router())
         .fallback(handler_fallback)
         .with_state(app_state);
