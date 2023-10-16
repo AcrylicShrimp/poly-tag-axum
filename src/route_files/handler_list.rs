@@ -27,6 +27,21 @@ use meilisearch_sdk::{
 use std::sync::Arc;
 use uuid::Uuid;
 
+/// List files with optional filters.
+#[utoipa::path(
+    get,
+    operation_id = "file-list",
+    tag = "file",
+    path = "/files",
+    request_body = FileListReqBody,
+    responses(
+        (status = OK, description = "Ok", body = FileListRes),
+        (status = UNPROCESSABLE_ENTITY, description = "Invalid request has been received", body = ErrorBody, example = json!({
+            "error": "tag template `550e8400-e29b-41d4-a716-446655440000` is duplicated"
+        })),
+        (status = INTERNAL_SERVER_ERROR, description = "An unknown error has occurred during processing", body = ErrorBody),
+    ),
+)]
 #[debug_handler(state = AppState)]
 pub async fn handle(
     State(db_pool): State<DBPool>,

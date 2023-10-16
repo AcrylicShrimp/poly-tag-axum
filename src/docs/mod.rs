@@ -6,6 +6,7 @@ use utoipa::{OpenApi, ToSchema};
         crate::route_tag_templates::handler_list::handle,
         crate::route_tag_templates::handler_post::handle,
         
+        crate::route_files::handler_list::handle,
         crate::route_files::handler_prepare::handle,
         crate::route_files::handler_upload::handle,
     ),
@@ -16,9 +17,16 @@ use utoipa::{OpenApi, ToSchema};
         schemas(crate::db::model::TagValueTypeKind),
         
         schemas(crate::route_tag_templates::handler_list::dto::TagTemplateListRes),
-
+        
         schemas(crate::route_tag_templates::handler_post::dto::TagTemplatePostReqBody),
         schemas(crate::route_tag_templates::handler_post::dto::TagTemplatePostRes),
+
+        schemas(crate::route_files::handler_list::dto::FileListReqBody),
+        schemas(crate::route_files::handler_list::dto::FileListReqBodyTag),
+        schemas(crate::route_files::handler_list::dto::FileListReqBodyTagValue),
+        schemas(crate::route_files::handler_list::dto::FileListReqBodyTagValueParam),
+        schemas(crate::route_files::handler_list::dto::FileListRes),
+        schemas(crate::route_files::handler_list::dto::FileListResFile),
 
         schemas(crate::route_files::handler_prepare::dto::FilePrepareReqBody),
         schemas(crate::route_files::handler_prepare::dto::FilePrepareReqBodyTag),
