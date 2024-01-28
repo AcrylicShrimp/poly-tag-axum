@@ -1,13 +1,12 @@
 use serde::Deserialize;
-use std::num::NonZeroU32;
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
-fn default_page_size() -> NonZeroU32 {
-    NonZeroU32::new(25).unwrap()
+fn default_page_size() -> u64 {
+    25
 }
 
-#[derive(Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Deserialize, ToSchema, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum PaginationOrderDto {
     Asc,
@@ -25,15 +24,15 @@ impl Default for PaginationOrderDto {
 #[into_params(parameter_in = Query)]
 pub struct FindCollectionsQueryDto {
     #[into_params(example = "1", default = "1")]
-    pub first_id: Option<NonZeroU32>,
+    pub first_id: Option<i32>,
     #[into_params(example = "1", default = "1")]
-    pub last_id: Option<NonZeroU32>,
+    pub last_id: Option<i32>,
     #[into_params(example = "desc", default = "desc")]
     #[serde(default)]
     pub order: PaginationOrderDto,
     #[into_params(example = "25", default = "25", maximum = 100)]
     #[serde(default = "default_page_size")]
-    pub page_size: NonZeroU32,
+    pub page_size: u64,
     #[into_params(example = "Movies")]
     pub filter_name: Option<String>,
 }
@@ -62,7 +61,7 @@ pub struct CreateCollectionBodyDto {
 pub struct RemoveCollectionPathDto {
     #[into_params(example = "1")]
     #[into_params(description = "id of the collection")]
-    pub identifier: NonZeroU32,
+    pub identifier: i32,
 }
 
 #[derive(Deserialize, IntoParams, Debug, Clone, PartialEq, Eq, Hash)]
@@ -71,7 +70,7 @@ pub struct RemoveCollectionPathDto {
 pub struct UpdateCollectionPathDto {
     #[into_params(example = "1")]
     #[into_params(description = "id of the collection")]
-    pub identifier: NonZeroU32,
+    pub identifier: i32,
 }
 
 #[derive(Deserialize, ToSchema, Debug, Clone, PartialEq, Eq, Hash)]
@@ -87,10 +86,10 @@ pub struct UpdateCollectionBodyDto {
 #[serde(rename_all = "camelCase")]
 pub struct FindFilesBodyDto {
     #[schema(example = "1", default = "1")]
-    pub page: NonZeroU32,
+    pub page: u32,
     #[serde(default = "default_page_size")]
     #[schema(example = "25", default = "25", maximum = 100)]
-    pub page_size: NonZeroU32,
+    pub page_size: u64,
     #[schema(example = "john wick")]
     pub query: Option<String>,
     pub filter: Option<FindFilesBodyFilterDto>,

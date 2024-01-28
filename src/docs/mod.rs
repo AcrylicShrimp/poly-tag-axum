@@ -22,6 +22,7 @@ use utoipa::{OpenApi, ToSchema};
         schemas(crate::db::model::TagTemplate),
         schemas(crate::db::model::TagValueTypeKind),
 
+        schemas(crate::schema::dto_in::PaginationOrderDto),
         schemas(crate::schema::dto_in::CreateCollectionBodyDto),
         schemas(crate::schema::dto_in::UpdateCollectionBodyDto),
         

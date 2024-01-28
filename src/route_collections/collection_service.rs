@@ -53,16 +53,16 @@ impl CollectionService {
                 async move {
                     let mut q = collections
                         .select((id, uuid, name, description, created_at))
-                        .limit(query.page_size.get() as i64)
+                        .limit(query.page_size as i64)
                         .into_boxed();
 
                     if let Some(first_id) = query.first_id {
                         match query.order {
                             PaginationOrderDto::Asc => {
-                                q = q.filter(id.lt(first_id.get() as i32));
+                                q = q.filter(id.lt(first_id));
                             }
                             PaginationOrderDto::Desc => {
-                                q = q.filter(id.gt(first_id.get() as i32));
+                                q = q.filter(id.gt(first_id));
                             }
                         }
                     }
@@ -70,10 +70,10 @@ impl CollectionService {
                     if let Some(last_id) = query.last_id {
                         match query.order {
                             PaginationOrderDto::Asc => {
-                                q = q.filter(id.gt(last_id.get() as i32));
+                                q = q.filter(id.gt(last_id));
                             }
                             PaginationOrderDto::Desc => {
-                                q = q.filter(id.lt(last_id.get() as i32));
+                                q = q.filter(id.lt(last_id));
                             }
                         }
                     }
@@ -223,7 +223,7 @@ impl CollectionService {
         use crate::db::schema::collections::dsl::*;
 
         let db_conn = &mut self.db_pool.get().await?;
-        let raw_item = diesel::update(collections.filter(id.eq(path.identifier.get() as i32)))
+        let raw_item = diesel::update(collections.filter(id.eq(path.identifier)))
             .set((name.eq(body.name), description.eq(body.description)))
             .get_result::<RawCollectionDto>(db_conn)
             .await
@@ -239,7 +239,7 @@ impl CollectionService {
         use crate::db::schema::collections::dsl::*;
 
         let db_conn = &mut self.db_pool.get().await?;
-        let raw_item = diesel::delete(collections.filter(id.eq(path.identifier.get() as i32)))
+        let raw_item = diesel::delete(collections.filter(id.eq(path.identifier)))
             .get_result::<RawCollectionDto>(db_conn)
             .await
             .optional()?;
