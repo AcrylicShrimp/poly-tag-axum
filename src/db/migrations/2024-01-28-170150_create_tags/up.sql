@@ -1,0 +1,8 @@
+-- Your SQL goes here
+
+CREATE TABLE tags (
+  id BIGSERIAL PRIMARY KEY,
+  file_id INT NOT NULL REFERENCES files(id) ON UPDATE CASCADE ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  value TEXT NULL
+);

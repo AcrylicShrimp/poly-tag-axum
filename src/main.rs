@@ -4,8 +4,6 @@ mod docs;
 mod file_driver;
 mod response;
 mod route_collections;
-mod route_files;
-mod route_tag_templates;
 mod schema;
 
 use crate::{docs::ApiDoc, file_driver::FileDriver};
@@ -51,8 +49,6 @@ async fn main() {
 
     let app = app
         .merge(route_collections::router())
-        .merge(route_files::router())
-        .merge(route_tag_templates::router())
         .fallback(handler_fallback)
         .with_state(app_state);
 

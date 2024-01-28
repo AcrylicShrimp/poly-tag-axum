@@ -1,5 +1,4 @@
 -- Your SQL goes here
-CREATE EXTENSION "uuid-ossp";
 
 CREATE TABLE collections (
   id SERIAL PRIMARY KEY,
@@ -8,5 +7,6 @@ CREATE TABLE collections (
   description TEXT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
 CREATE UNIQUE INDEX ON collections(uuid);
-CREATE INDEX ON collections(created_at DESC);
+CREATE INDEX ON collections(name);
