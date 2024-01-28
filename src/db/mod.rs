@@ -10,7 +10,6 @@ use meilisearch_sdk::Client;
 use std::time::Duration;
 use thiserror::Error;
 
-pub mod model;
 pub mod schema;
 
 const MIGRATIONS: EmbeddedMigrations = embed_migrations!("src/db/migrations");
