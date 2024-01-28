@@ -209,7 +209,10 @@ pub async fn handle(
                             hash: file.hash,
                             // NOTE: We're using diesel, and diesel uses UTC by default.
                             // See: https://github.com/diesel-rs/diesel/issues/1024
-                            uploaded_at: DateTime::<Utc>::from_utc(file.uploaded_at, Utc),
+                            uploaded_at: DateTime::<Utc>::from_naive_utc_and_offset(
+                                file.uploaded_at,
+                                Utc,
+                            ),
                         })
                         .collect()
                 };

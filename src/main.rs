@@ -3,14 +3,16 @@ mod db;
 mod docs;
 mod file_driver;
 mod response;
+mod route_collections;
 mod route_files;
 mod route_tag_templates;
+mod schema;
 
 use crate::{docs::ApiDoc, file_driver::FileDriver};
 use app_state::AppState;
-use axum::{http::StatusCode, response::IntoResponse, Router, Server};
+use axum::{http::StatusCode, response::IntoResponse, Router};
 use std::net::SocketAddr;
-use tokio::signal;
+use tokio::{net::TcpListener, signal};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -48,15 +50,15 @@ async fn main() {
     };
 
     let app = app
+        .merge(route_collections::router())
         .merge(route_files::router())
         .merge(route_tag_templates::router())
         .fallback(handler_fallback)
         .with_state(app_state);
 
     tracing::info!("listening on {}", addr);
-    Server::bind(&addr)
-        .http2_enable_connect_protocol()
-        .serve(app.into_make_service())
+    let listener = TcpListener::bind(&addr).await.unwrap();
+    axum::serve(listener, app.into_make_service())
         .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();

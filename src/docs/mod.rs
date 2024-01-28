@@ -3,6 +3,12 @@ use utoipa::{OpenApi, ToSchema};
 #[derive(OpenApi)]
 #[openapi(
     paths(
+        crate::route_collections::handlers::find_collections,
+        crate::route_collections::handlers::find_collection,
+        crate::route_collections::handlers::create_collection,
+        crate::route_collections::handlers::update_collection,
+        crate::route_collections::handlers::remove_collection,
+
         crate::route_tag_templates::handler_list::handle,
         crate::route_tag_templates::handler_post::handle,
         
@@ -15,6 +21,13 @@ use utoipa::{OpenApi, ToSchema};
 
         schemas(crate::db::model::TagTemplate),
         schemas(crate::db::model::TagValueTypeKind),
+
+        schemas(crate::schema::dto_in::CreateCollectionBodyDto),
+        schemas(crate::schema::dto_in::UpdateCollectionBodyDto),
+        
+        schemas(crate::schema::dto_out::PaginationMetadataDto),
+        schemas(crate::schema::dto_out::CollectionDto),
+        schemas(crate::schema::dto_out::FindCollectionsResultDto),
         
         schemas(crate::route_tag_templates::handler_list::dto::TagTemplateListRes),
         

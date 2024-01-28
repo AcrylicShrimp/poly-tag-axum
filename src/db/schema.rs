@@ -7,6 +7,16 @@ pub mod sql_types {
 }
 
 diesel::table! {
+    collections (id) {
+        id -> Int4,
+        uuid -> Uuid,
+        name -> Text,
+        description -> Nullable<Text>,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     files (uuid) {
         uuid -> Uuid,
         name -> Text,
@@ -52,6 +62,7 @@ diesel::joinable!(tags -> files (file_uuid));
 diesel::joinable!(tags -> tag_templates (template_uuid));
 
 diesel::allow_tables_to_appear_in_same_query!(
+    collections,
     files,
     stagings,
     tag_templates,

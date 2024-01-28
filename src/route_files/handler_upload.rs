@@ -4,8 +4,9 @@ use crate::{
     file_driver::FileDriver,
 };
 use axum::{
+    body::Body,
     debug_handler,
-    extract::{BodyStream, Path, Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
@@ -38,7 +39,7 @@ pub async fn handle(
     State(meilisearch_client): State<Arc<Client>>,
     path_param: Path<PathParam>,
     query_param: Query<QueryParam>,
-    mut body: BodyStream,
+    body: Body,
 ) -> Result<(StatusCode, Json<FileUploadRes>), ErrRes> {
     use crate::db::schema::files::dsl as files;
 
@@ -56,7 +57,7 @@ pub async fn handle(
     };
 
     let file_size = file_driver
-        .write_file(file.uuid, query_param.offset, &mut body)
+        .write_file(file.uuid, query_param.offset, body.into_data_stream())
         .await?;
     let file_info = file_driver.read_file_info(file.uuid).await?;
     let now = Utc::now().naive_utc();
